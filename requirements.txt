@@ -1,0 +1,9 @@
+metaflow>=2.11.5
+numpy
+pandas
+scikit-learn
+matplotlib
+opencv-python-headless
+librosa
+ffmpeg-python
+torch
