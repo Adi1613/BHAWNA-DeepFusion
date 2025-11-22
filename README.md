@@ -1,172 +1,104 @@
-Multimodal Emotion Recognition using EEG, Audio, and Video (BHAWNA Dataset)
-This repository contains the full implementation of a multimodal emotion-recognition pipeline built on top of the BHAWNA dataset, an in-house naturalistic multimodal emotion dataset consisting of EEG signals, audio, and face video recordings.
-The system integrates EEGNet, FaceNet, and Wave2Vec2 representation learning pipelines and performs end-to-end multimodal fusion using PyTorch and Metaflow.
+# 🚀 Running the Multimodal Emotion Recognition Flow (Local)
 
-🌟 Key Features
-Multimodal Inputs
+### **Run via Metaflow CLI**
 
+To execute the full multimodal emotion recognition pipeline locally:
 
-EEG signals → EEGNet-style encoder
+```bash
+python -m metaflow run flows/emotion_flow.py \
+    --root /path/to/data \
+    --modality_policy eeg_video \
+    --epochs 10 \
+    --batch_size 2
+```
 
-Audio spectrograms → WaveNet / Wav2Vec2-style encoder
+### **Run directly (without `-m metaflow`)**
 
-Video sequences → FaceNet-inspired 3D CNN encoder
-
-End-to-end Training with Metaflow
-
-
-📁 Project Structure
-.
-├── flows/
-│   └── emotion_flow.py        # Metaflow pipeline orchestrating the experiment
-│
-├── models/
-│   ├── backbone.py            # EEGNet, FaceNet, WaveNet/Wav2Vec2 style encoders
-│   └── model.py               # Fusion model + classifier
-│
-├── training/
-│   └── train_eval.py          # Training and evaluation loops
-│
-├── utils/
-│   ├── dataset.py             # Multimodal dataset loader
-│   ├── audio_utils.py         # Mel-spectrogram extraction
-│   └── video_utils.py         # Frame extraction
-│
-├── config.py                  # Hyperparameters + training configuration
-│
-├── outputs/
-│   ├── features/              # Cached EEG / Audio / Video embeddings
-│   └── plots/                 # Loss curves, accuracy curves
-│
-├── README.md                  # <--- This file
-
-
-📦 Installation
-1. Clone repository
-git clone https://github.com/<your-username>/<repo>.git
-cd <repo>
-
-2. Create environment
-conda create -n emotion python=3.12
-conda activate emotion
-
-3. Install dependencies
-pip install -r requirements.txt
-
-
-🧪 Running the Pipeline
-The entire experiment is orchestrated by Metaflow using EmotionFlow.
-Default run
-python flows/emotion_flow.py run
-
-Run with specific parameters
+```bash
 python flows/emotion_flow.py run \
-    --use_eegnet True \
-    --use_facenet True \
-    --use_wavenet True \
-    --regen_features False \
-    --device mps
+    --root /Users/adityashah/Documents/PhD/PhD/data \
+    --modality_policy eeg_video \
+    --epochs 10 \
+    --batch_size 2 \
+    --plot_curves True \
+    --regen_features False
+```
+
+You can also run it inside a **Jupyter Notebook / Colab**:
+
+```python
+!python flows/emotion_flow.py run --root /path/to/data --modality_policy eeg_video
+```
+
+or Metaflow magic:
+
+```python
+%run flows/emotion_flow.py --root /path/to/data --modality_policy eeg_video
+```
+
+---
+
+# 📁 Expected Data Layout
+
+Your dataset root directory must follow this structure:
+
+```
+ROOT/
+├── P1/
+│   ├── P1_annotation.csv   (or .xlsx)
+│   ├── P1_eeg.csv
+│   └── *.mp4               (video files)
+│
+├── P2/
+│   ├── P2_annotation.csv
+│   ├── P2_eeg.csv
+│   └── *.mp4
+│
+└── ...
+```
+
+**Notes:**
+
+* Annotation file must contain timestamp + emotion labels.
+* Each MP4 contains continuous video for that participant.
+* EEG is raw Muse (27-channel) time-series data.
+
+---
+
+# 📦 Outputs Generated
+
+After running the flow, you will find:
+
+### **1. Feature Cache**
+
+```
+outputs/features/*.npz
+```
+
+Preprocessed 5-second aligned multimodal windows (video embeddings, log-mel audio, EEG features).
+
+### **2. Model Checkpoints**
+
+```
+checkpoints/mm_emotion_metaflow.pt
+```
+
+Saved multimodal fusion transformer weights.
+
+### **3. Evaluation Artifacts**
+
+```
+outputs/train_loss_curve.png
+outputs/val_acc_curve.png
+outputs/confusion_matrix.png
+outputs/*.csv
+```
+
+Includes:
+
+* Confusion matrix (PNG + CSV)
+* Classification report
+* Per-class metrics (precision/recall/F1)
+* Training/validation learning curves
 
 
-🧠 Model Details
-EEG Encoder (EEGNet-inspired)
-Depthwise and separable 1D convolutions
-
-Compact architecture optimized for EEG signals
-
-Video Encoder (FaceNet-style)
-3D → 2D CNN
-
-Learns compact face embeddings
-
-Inspired by triplet-learning FaceNet
-
-Audio Encoder (WaveNet/Wav2Vec2-style)
-Mel spectrogram extraction
-
-2D CNN backbone
-
-Placeholder for full WaveNet/Wav2Vec2 integration
-
-Fusion Strategy
-Concatenate latent features:
- [
- z = [z_{video} , || , z_{audio} , || , z_{eeg}]
- ]
-
-
-Fully connected layers + dropout
-
-Softmax emotion classifier
-
-Trains using cross-entropy loss
-
-
-
-🔧 Configuration
-The config.py file defines all tunable parameters:
-LEARNING_RATE
-BATCH_SIZE
-EPOCHS
-DROPOUT_RATE
-LR_STEP_SIZE, LR_GAMMA
-DEVICE (cpu / cuda / mps)
-Feature dimensions for each backbone
-Paths for data and cache
-
-
-
-📊 Results
-Emotion Classification Performance
-Multiclass classification across 7 emotions
-
-
-Higher class accuracy for Happiness and Neutral, consistent with dataset priors
-
-
-Confusion matrix and training curves provided in outputs/plots/
-
-
-Training Visualizations
-Training loss vs epoch
-
-
-Validation accuracy vs epoch
-
-
-Participant-wise emotion distribution plots
-
-
-
-📄 BHAWNA Dataset
-This project is based on the BHAWNA (BeHavior of Affect Within Natural Articulation) dataset:
-15 participants
-
-Hindi conversations
-
-
-Multimodal signals: EEG, Audio, Video
-Emotion annotation every 5 seconds
-Naturalistic, context-dependent emotional content
-The dataset is currently not public and is used for academic experimentation.
-
-🧭 Future Work
-Integrate full FaceNet pretrained embedding extraction
-Add wav2vec 2.0 pretrained model for raw audio
-Support late fusion, attention fusion, cross-modal transformers
-Hyperparameter tuning via Hyperopt or Optuna
-Deployment with TorchScript / ONNX
-
-
-📚 Citation
-If you use this repository, please cite:
-Aditya Kumar Shah, Dr Virender Kadyan UPES.
-Multimodal Emotion Recognition using EEG, Audio, and Video on the BHAWNA Dataset.
-
-
-🙌 Acknowledgments
-Special thanks to:
-Machine Intelligence Research Center, UPES
-BHAWNA dataset contributors
-Open-source models: EEGNet, FaceNet, Wav2Vec2
-Metaflow community
